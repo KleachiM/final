@@ -1,4 +1,5 @@
 import requests
+import json
 from urllib.parse import urlencode
 
 from pprint import pprint
@@ -30,9 +31,14 @@ response = requests.get(
         'access_token': token,
         'v': 5.21,
         'rev': 0,
-        # 'photo_sizes': 1
+        'photo_sizes': 1
     }
 )
 
-print(response)
+# print(response)
 pprint(response.json())
+# pprint(response.json()['response']['items'][-1]['sizes'][-1]['src'])
+
+# dnld = requests.get(response.json()['response']['items'][-1]['sizes'][-1]['src'])
+# with open('photo.jpg', 'wb') as f:
+#     f.write(dnld.content)
