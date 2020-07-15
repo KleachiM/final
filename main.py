@@ -1,4 +1,4 @@
-import requests
+mport requests
 import json
 from urllib.parse import urlencode
 
@@ -35,10 +35,25 @@ response = requests.get(
     }
 )
 
+types_list = ['w', 'z', 'y', 'r', 'q', 'p', 'o', 'x', 'm', 's']
+
 # print(response)
-pprint(response.json())
+# pprint(response.json())
 # pprint(response.json()['response']['items'][-1]['sizes'][-1]['src'])
 
 # dnld = requests.get(response.json()['response']['items'][-1]['sizes'][-1]['src'])
 # with open('photo.jpg', 'wb') as f:
 #     f.write(dnld.content)
+
+for size_type in types_list:
+    for item in response.json()['response']['items']:
+        for size in item['sizes']:
+            if size['type'] == size_type:
+                break
+    download_url = size['src']
+    file_name = f'{item["likes"]["count"]}_{item["date"]}.jpg'
+    with open('final/data.json', 'a') as f:
+        json.dump(
+            {'file_name': file_name,
+             'size': size['type']},
+            f, indent=4)
