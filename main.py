@@ -35,25 +35,31 @@ response = requests.get(
     }
 )
 
+print(response)
 types_list = ['w', 'z', 'y', 'r', 'q', 'p', 'o', 'x', 'm', 's']
-
-# print(response)
-# pprint(response.json())
-# pprint(response.json()['response']['items'][-1]['sizes'][-1]['src'])
 
 # dnld = requests.get(response.json()['response']['items'][-1]['sizes'][-1]['src'])
 # with open('photo.jpg', 'wb') as f:
 #     f.write(dnld.content)
+
 json_data = []
-for size_type in types_list:
-    for item in response.json()['response']['items']:
-        for size in item['sizes']:
-            if size['type'] == size_type:
+
+for item in response.json()['response']['items']:
+    not_found = True
+    type_num = 0
+    while not_found:
+        size = 0
+        while size < len(item['sizes']):
+            if item['sizes'][size]['type'] != types_list[type_num]:
+                size += 1
+            else:
+                file_name = f'{item["likes"]["count"]}_{item["date"]}.jpg'
+                json_data.append({'file_name': file_name, 'size': types_list[type_num]})
+                not_found = False
                 break
-                download_url = size['src']
-            file_name = f'{item["likes"]["count"]}_{item["date"]}.jpg'
-            json_data.append({'file_name': file_name, 'size': size['type']})
+        type_num += 1
 
 pprint(json_data)
+
 # with open('data.json', 'a') as f:
         # json.dump(json_data, f)
