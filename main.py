@@ -5,8 +5,6 @@ from urllib.parse import urlencode
 from datetime import *
 from tqdm import tqdm
 
-from pprint import pprint
-
 # OAUTH_URL = 'https://oauth.vk.com/authorize'
 # APP_ID = 7536762
 
@@ -22,8 +20,15 @@ from pprint import pprint
 #     (OAUTH_URL, urlencode(OAUTH_DATA))
 # ))
 
-ID = 4609665
-YA_TOKEN = 'AgAAAAA86I9wAADLW4TMFaX010u7pssNYZgHB8w'
+ID = input('Введите ID пользователя VK: ')
+YA_TOKEN = input('Введите токен с полигона Яндекс.Диска: ')
+question = 0
+while question != 'y' and question != 'n':
+    question = input('Вы хотите изменить количество загружаемых фотографий (по умолчанию - 5)? (y/n): ')
+if question == 'y':
+    photo_count = int(input('Введите количество загружаемых фотографий: '))
+else:
+    photo_count = 5
 
 VK_TOKEN = '510d2f3bd935bc86e8df8caf31c9b72b4609f6f327df7cb62ece43d3115f8e1ccc3893551a36b2f4b83b0'
 response = requests.get(
@@ -39,12 +44,11 @@ response = requests.get(
     }
 )
 
-print(response)
 types_list = ['w', 'z', 'y', 'r', 'q', 'p', 'o', 'x', 'm', 's']
 
 photos = []
 
-for item in response.json()['response']['items']:
+for item in tqdm(response.json()['response']['items'], desc='Data retrieving'):
     not_found = True
     type_num = 0
     while not_found:
@@ -66,10 +70,10 @@ for item in response.json()['response']['items']:
                 break
         type_num += 1
 
-if len(photos) < 6:
+if len(photos) < photo_count:
     iter_count = len(photos)
 else:
-    iter_count = int(input('Введите количество фотографий для загрузки: '))
+    iter_count = photo_count
 
 json_data = []
 count = 0
@@ -98,7 +102,8 @@ for photo in json_data:
 path = os.path.join(os.path.abspath(os.curdir), 'tmp_photos')
 os.mkdir(path)
 
-for photo in json_data:
+json_upl = []
+for photo in tqdm(json_data, desc="Photo downloading from VK"):
     if likes_count_tmp[photo['likes']] > 1:
         photo['file_name'] = f'{photo["likes"]}{photo["date"]}.jpg'
     else:
@@ -107,6 +112,7 @@ for photo in json_data:
     f_path = f'tmp_photos/{photo["file_name"]}'
     with open(f_path, 'wb') as f:
         f.write(dnld.content)
+    json_upl.append({'file_name': photo['file_name'], 'size': photo['size']})
 
 likes_count_tmp.clear()
 
@@ -114,7 +120,10 @@ params = {'path': 'photos_from_vk'}
 headers = {'Authorization': f'OAuth {YA_TOKEN}'}
 ya_resp = requests.put('https://cloud-api.yandex.net:443/v1/disk/resources', params=params, headers=headers)
 
-for file in os.listdir(path):
+with open('data.json', 'w') as f:
+    json.dump(json_upl, f, indent=4)
+
+for file in tqdm(os.listdir(path), desc='Photo uploading to Yandex.Disc'):
     file_name = file
 
     params = {'path': f'/photos_from_vk/{file_name}', 'overwrite': 'true'}
@@ -123,9 +132,5 @@ for file in os.listdir(path):
     ya_resp = requests.get(upl_url, params=params, headers=headers)
     put_url = ya_resp.json().get('href')
 
-    print(os.path.join(path, file_name))
     files = {'file': open(os.path.join(path, file_name), 'rb')}
     ya_resp = requests.put(put_url, files=files)
-
-with open('data.json', 'w') as f:
-        json.dump(json_data, f, indent=4)
